@@ -1,28 +1,29 @@
 package com.example.demo.controller;
 
 
-import com.example.demo.dto.CarDto;
+import com.example.demo.dto.request.CarRequestDto;
+import com.example.demo.dto.respons.CarResponsDto;
 import com.example.demo.service.CarService;
-import lombok.RequiredArgsConstructor;
+import lombok.Data;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.LinkedList;
+import java.util.List;
 
 @RestController
-@RequiredArgsConstructor
+@Data
 @RequestMapping("/car")
 public class CarController {
 
     private final CarService carService;
 
     @PostMapping("/create")
-    public String create(@RequestBody CarDto carDto) {
-        return carService.create(carDto);
+    public void create(@RequestBody CarRequestDto carDto) {
+        carService.create(carDto);
     }
 
 
     @GetMapping("/getAll")
-    public LinkedList<CarDto> getCars() {
+    public List<CarResponsDto> getCars() {
         return carService.getCars();
     }
 
@@ -33,7 +34,7 @@ public class CarController {
     }
 
     @PutMapping("/update")
-    public String update(@RequestHeader("id") Long id, @RequestBody CarDto newCar) {
+    public String update(@RequestHeader("id") Long id, @RequestBody CarRequestDto newCar) {
         return carService.update(id, newCar);
     }
 
@@ -48,5 +49,10 @@ public class CarController {
         return carService.delete(id);
     }
 
+
+    @PostMapping("/sending-email")
+    public String sendEmail(@RequestParam String sub, @RequestParam String text) {
+        return carService.sendEmail(sub, text);
+    }
 
 }

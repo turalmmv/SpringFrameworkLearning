@@ -1,70 +1,113 @@
 package com.example.demo.service;
 
-import com.example.demo.dto.CarDto;
+import com.example.demo.dto.request.CarRequestDto;
+import com.example.demo.dto.respons.CarResponsDto;
 import com.example.demo.entity.CarEntity;
-import lombok.RequiredArgsConstructor;
+import com.example.demo.entity.CustomerEntity;
+import com.example.demo.repository.CarRepository;
+import com.example.demo.repository.CustomerRepository;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMailMessage;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
+@Slf4j
 public class CarService {
     private final ModelMapper modelMapper;
-    private final LinkedList<CarDto> carDtos = new LinkedList<>();
+    private final CarRepository carRepository;
+    private final CustomerRepository customerRepository;
+    private final JavaMailSender javaMailSender;
+//    private MimeMailMessage mimeMailMessage;
 
-    public String create(CarDto carDto) {
-        carDtos.add(carDto);
-        return "Successfully added";
+    public CarService(ModelMapper modelMapper, CarRepository carRepository, CustomerRepository customerRepository, JavaMailSender javaMailSender /*, MimeMailMessage mimeMailMessage */) {
+        this.modelMapper = modelMapper;
+        this.carRepository = carRepository;
+        this.customerRepository = customerRepository;
+        this.javaMailSender = javaMailSender;
+//        this.mimeMailMessage = mimeMailMessage;
     }
 
-    public LinkedList<CarDto> getCars() {
-        return carDtos;
+
+    public void create(CarRequestDto carDto) {
+        CarEntity carEntity = new CarEntity();
+//        CarEntity carEntity = modelMapper.map(carDto, CarEntity.class);
+//        CarEntity carEntity = modelMapper.map(carDto, CarEntity.class);
+        log.info("gelen dto entity e cevrildi");
+        carEntity.setCarYear(carDto.getCarYear());
+        carEntity.setModelName(carDto.getModelName());
+
+        Long customerId = carDto.getCustomerId();
+        log.info("gonderilen customer id tapildi");
+        log.info("customer repodan hemin idli object tapilir");
+        CustomerEntity customerEntity = customerRepository.findById(customerId).orElseThrow();
+        log.info("carEntity nin customerEntitysine tapilan object menimsedilir");
+        carEntity.setCustomerEntity(customerEntity);
+        log.info("carEntity car repoya save edilir.");
+        carRepository.save(carEntity);
     }
 
-    public Object getById(Long id) {
-        for (CarDto carDto1 : carDtos) {
-            if (Objects.equals(carDto1.getId(), id)) {
-                return carDto1;
-            }
-        }
-        return "Car is not found";
+
+    public List<CarResponsDto> getCars() {
+        List<CarEntity> all = carRepository.findAll();
+        log.info("car reposundan butun entityler cekildi");
+        return all.stream()
+                .map(carEntity -> modelMapper.map(carEntity, CarResponsDto.class))
+                .collect(Collectors.toList());
     }
 
-    public String update(Long id, CarDto newCar) {
-        for (CarDto oldCar : carDtos) {
-            if (oldCar.getId().equals(id)) {
-                oldCar.setId(newCar.getId());
-                oldCar.setModelName(newCar.getModelName());
-                oldCar.setYear(newCar.getYear());
-            }
-        }
+    public CarEntity getById(Long id) {
+        log.info("car reposundan id e gore car entity cagrilir tapmasa throw edecek");
+        return carRepository.findById(id).orElseThrow();
+    }
+
+    public String update(Long id, CarRequestDto newCarDto) {
+        log.info("car reposundan id e gore car entity cagrilir tapmasa throw edecek");
+        CarEntity carEntity = carRepository.findById(id).orElseThrow();
+        modelMapper.map(newCarDto, carEntity);
+        log.info("dto parametri entity e cevrilib car reposuna save edilir");
+        carRepository.save(carEntity);
         return "Successfully updated";
     }
 
     public String updateYearById(Long id, Integer year) {
-        List<CarDto> list = carDtos.stream().filter(carDto1 -> Objects.equals(carDto1.getId(), id)).toList();
-
-        for (CarDto item : list) {
-            item.setYear(year);
-        }
+        log.info("car reposundan id e gore car entity cagrilir tapmasa throw edecek");
+        CarEntity carEntity = carRepository.findById(id).orElseThrow();
+        log.info("parametr kimi otrulen il hemin entity nin year ne set olnur");
+        carEntity.setCarYear(year);
         return "Updated";
     }
 
     public String delete(Long id) {
-        carDtos.removeIf(carDto1 -> Objects.equals(carDto1.getId(), id));
+        log.info("car reposundan id e gore car entity cagrilir tapmasa throw edecek");
+        carRepository.findById(id).orElseThrow();
+        log.info("eger throw etmese hemin id li obyekti car reposundan silir");
+        carRepository.deleteById(id);
         return "Successfully deleted";
     }
 
-    public CarDto convertToDto(CarEntity carEntity) {
-        return modelMapper.map(carEntity, CarDto.class);
+    public String sendEmail(String sub,String text){
+        SimpleMailMessage msg = new SimpleMailMessage();
+
+        msg.setTo("mamedovt850@gmail.com");
+        msg.setFrom("tmamedov6344@gmail.com");
+        msg.setSubject(sub);
+        msg.setText(text);
+
+        javaMailSender.send(msg);
+
+
+        return "Successfully sent";
     }
 
-    public CarEntity convertToDao(CarDto carDto) {
-        return modelMapper.map(carDto, CarEntity.class);
+    public void sendImage(){
+
     }
 
 

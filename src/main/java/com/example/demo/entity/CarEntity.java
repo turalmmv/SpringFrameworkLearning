@@ -1,19 +1,23 @@
 package com.example.demo.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.Data;
 
 @Entity
-@RequiredArgsConstructor
-@AllArgsConstructor
-@Table(name = "car")
+@Data
+@Table(name = "cars")
 public class CarEntity {
     @Id
-    Long id;
-    String modelName;
-    Integer carYear;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long carId;
+    @Column(name = "car_model")
+    private String modelName;
+    @Column(name = "car_year")
+    private Integer carYear;
 
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    @JsonIgnore
+    private CustomerEntity customerEntity;
 }
